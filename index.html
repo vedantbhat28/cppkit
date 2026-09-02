@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPPkit</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg:#090C14;
+    --panel: rgba(255,255,255,0.045);
+    --panel-border: rgba(255,255,255,0.09);
+    --panel-border-hover: rgba(255,255,255,0.18);
+    --text:#F1F0FA;
+    --muted:#8B93AC;
+    --muted-dim:#5B617A;
+    --cyan:#22D3EE;
+    --red:#FB7185;
+    --green:#34D399;
+    --grad: linear-gradient(120deg, #22D3EE, #67E8F9);
+    --display: 'Space Grotesk', 'Inter', sans-serif;
+    --sans: 'Inter', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.55;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ---------- ambient background ---------- */
+  .bg-scene{
+    position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+  }
+  .blob{
+    position:absolute; border-radius:50%; filter:blur(90px); opacity:0.35;
+    animation:drift 22s ease-in-out infinite;
+  }
+  .blob.b1{ width:520px; height:520px; top:-160px; left:-120px; background:var(--cyan); opacity:0.22; animation-delay:0s;}
+  .blob.b2{ width:460px; height:460px; top:20%; right:-160px; background:var(--cyan); opacity:0.16; animation-delay:-7s;}
+  @keyframes drift{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    33%{ transform:translate(40px,-30px) scale(1.08); }
+    66%{ transform:translate(-30px,25px) scale(0.95); }
+  }
+  .grid-overlay{
+    position:absolute; inset:-2px;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 90%);
+    animation:pan 40s linear infinite;
+  }
+  @keyframes pan{ from{ background-position:0 0, 0 0; } to{ background-position:64px 128px, 64px 128px; } }
+
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:88px 24px 140px;
+    position:relative;
+    z-index:1;
+  }
+
+  /* ---------- hero ---------- */
+  header.top{ margin-bottom:56px; opacity:0; animation:riseIn .7s ease forwards; }
+
+  .title-row{ display:flex; align-items:center; gap:12px; margin:0 0 14px; }
+
+  header.top h1{
+    font-family:var(--display);
+    font-weight:700;
+    font-size:52px;
+    line-height:1.08;
+    margin:0;
+    max-width:13ch;
+    letter-spacing:-0.01em;
+    background:linear-gradient(100deg, #fff 20%, var(--cyan) 50%, #fff 85%);
+    background-size:300% auto;
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent;
+    animation:shine 7s linear infinite;
+  }
+  @keyframes shine{ to{ background-position:-300% center; } }
+
+  .ai-pill{
+    flex:0 0 auto;
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.06em;
+    color:var(--cyan);
+    border:1px solid var(--panel-border-hover);
+    background:var(--panel);
+    border-radius:100px;
+    padding:4px 10px;
+  }
+
+  header.top .tagline{ color:var(--muted); font-size:16px; max-width:52ch; margin:0; }
+
+  .reset-btn{
+    position:fixed; top:20px; right:24px; z-index:50;
+    font-family:var(--mono); font-size:12px; font-weight:600; color:var(--red);
+    background:rgba(15,17,28,0.85); backdrop-filter:blur(8px);
+    border:1px solid var(--red); border-radius:100px; padding:9px 16px; cursor:pointer;
+    box-shadow:0 4px 18px rgba(0,0,0,0.35);
+    transition:transform .15s ease, background .2s ease, box-shadow .2s ease;
+  }
+  .reset-btn:hover{ background:var(--red); color:#0A0C14; transform:translateY(-1px); box-shadow:0 6px 22px rgba(251,113,133,0.35); }
+
+  @media (max-width:600px){
+    .reset-btn{ top:14px; right:14px; padding:8px 13px; font-size:11px; }
+  }
+
+  @keyframes riseIn{
+    from{ opacity:0; transform:translateY(14px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  /* ---------- panels ---------- */
+  section.card{
+    background:var(--panel);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--panel-border);
+    border-radius:16px;
+    margin-bottom:24px;
+    position:relative;
+    overflow:hidden;
+    opacity:0; animation:riseIn .7s ease forwards;
+    transition:border-color .25s ease;
+  }
+  section.card::before{
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:1px;
+    background:var(--grad);
+    opacity:0.7;
+  }
+  section.card:hover{ border-color:var(--panel-border-hover); }
+
+  .card-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:22px 26px 16px;
+  }
+  .card-head h2{ font-family:var(--display); font-size:18px; font-weight:600; margin:0; }
+  .card-head .count{ font-family:var(--mono); font-size:12px; color:var(--muted); }
+
+  .rows{ padding:0 26px 6px; }
+  .row{
+    display:flex; align-items:center; gap:14px;
+    padding:11px 0;
+    border-bottom:1px solid var(--panel-border);
+    animation:slideIn .4s ease;
+  }
+  .row:last-child{ border-bottom:none; }
+  @keyframes slideIn{ from{ opacity:0; transform:translateX(-8px);} to{opacity:1; transform:translateX(0);} }
+
+  .badge{
+    font-family:var(--mono); font-size:12px; font-weight:500;
+    width:24px; flex:0 0 24px; text-align:center;
+    color:var(--bg);
+    background:var(--grad);
+    border-radius:50%;
+    height:24px; display:flex; align-items:center; justify-content:center;
+  }
+
+  .row input[type=url]{
+    flex:1; background:transparent; border:none;
+    border-bottom:1px solid transparent;
+    color:var(--text); font-family:var(--sans); font-size:14.5px;
+    padding:8px 2px; outline:none;
+    transition:border-color .2s ease;
+  }
+  .row input[type=url]::placeholder{ color:var(--muted-dim); }
+  .row input[type=url]:focus{ border-color:var(--cyan); }
+  .row input[type=url].invalid{ border-color:var(--red); }
+
+  .row-remove{
+    background:none; border:none; color:var(--muted); cursor:pointer;
+    font-size:16px; line-height:1; padding:4px 6px; flex:0 0 auto;
+    opacity:0; transition:opacity .15s ease, color .15s ease, transform .15s ease;
+  }
+  .row:hover .row-remove{ opacity:1; }
+  .row-remove:hover{ color:var(--red); transform:scale(1.15); }
+
+  .card-foot{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 26px 24px;
+  }
+
+  .add-link{
+    background:none; border:1px dashed var(--panel-border-hover);
+    color:var(--muted); font-family:var(--sans); font-size:13.5px;
+    padding:10px 16px; border-radius:100px; cursor:pointer;
+    transition:border-color .2s ease, color .2s ease, background .2s ease;
+  }
+  .add-link:hover:not(:disabled){ border-color:var(--cyan); color:var(--text); background:rgba(34,211,238,0.06); }
+  .add-link:disabled{ opacity:0.35; cursor:not-allowed; }
+
+  .run-btn{
+    position:relative;
+    background:var(--grad);
+    background-size:180% 180%;
+    color:#080A12;
+    border:none; font-family:var(--sans); font-weight:600; font-size:14.5px;
+    padding:13px 26px; border-radius:100px; cursor:pointer;
+    box-shadow:0 0 0 0 rgba(139,92,246,0.5);
+    transition:box-shadow .25s ease, transform .12s ease, background-position .6s ease;
+  }
+  .run-btn:hover:not(:disabled){ background-position:100% 50%; box-shadow:0 0 28px 2px rgba(139,92,246,0.45); }
+  .run-btn:active:not(:disabled){ transform:translateY(1px) scale(0.98); }
+  .run-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  /* ---------- process log ---------- */
+  #logCard{ display:none; }
+  .progress-track{
+    height:3px; margin:0 26px 14px; border-radius:2px;
+    background:rgba(255,255,255,0.08); overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; width:0%; background:var(--grad); border-radius:2px;
+    transition:width .5s ease;
+    position:relative;
+  }
+  .progress-fill::after{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    width:40%; animation:shimmer 1.4s linear infinite;
+  }
+  @keyframes shimmer{ from{ transform:translateX(-100%);} to{ transform:translateX(350%);} }
+
+  .log-rows{ padding:0 26px 20px; }
+  .log-row{
+    display:flex; align-items:center; gap:14px;
+    padding:12px 0; border-bottom:1px solid var(--panel-border);
+    font-size:14px; animation:slideIn .4s ease;
+  }
+  .log-row:last-child{ border-bottom:none; }
+
+  .log-status{
+    flex:0 0 20px; height:20px; width:20px; border-radius:50%;
+    position:relative; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.06);
+  }
+  .log-status.pending{ border:1.5px solid var(--panel-border-hover); }
+  .log-status.active{
+    background:conic-gradient(var(--cyan), transparent 60%);
+    animation:spin 0.9s linear infinite;
+  }
+  .log-status.active::after{ content:''; position:absolute; inset:3px; border-radius:50%; background:var(--bg); }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .log-status.done{ background:var(--green); animation:pop .3s ease; }
+  .log-status.done::after{ content:'✓'; font-size:11px; color:#052015; font-weight:700; }
+  .log-status.error{ background:var(--red); animation:shake .35s ease; }
+  .log-status.error::after{ content:'!'; font-size:11px; color:#2a0b0b; font-weight:700; }
+  @keyframes pop{ 0%{ transform:scale(0.4);} 70%{ transform:scale(1.15);} 100%{ transform:scale(1);} }
+  @keyframes shake{ 0%,100%{ transform:translateX(0);} 25%{transform:translateX(-3px);} 75%{transform:translateX(3px);} }
+
+  .log-url{ flex:1; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; }
+  .log-state{ font-family:var(--mono); font-size:11.5px; color:var(--muted); flex:0 0 auto; }
+  .log-state.error-text{ color:var(--red); }
+  .log-state.done-text{ color:var(--green); }
+
+  .retry-actions{
+    flex:0 0 auto; display:flex; gap:6px; margin-left:4px;
+    animation:slideIn .25s ease;
+  }
+  .retry-actions button{
+    font-family:var(--mono); font-size:11px; cursor:pointer;
+    border-radius:100px; padding:5px 11px;
+    transition:transform .12s ease, border-color .2s ease, background .2s ease;
+  }
+  .retry-actions .retry-btn{
+    background:var(--grad); border:none; color:#080A12; font-weight:600;
+  }
+  .retry-actions .retry-btn:hover{ transform:scale(1.05); }
+  .retry-actions .skip-btn{
+    background:transparent; border:1px solid var(--panel-border-hover); color:var(--muted);
+  }
+  .retry-actions .skip-btn:hover{ color:var(--text); border-color:var(--red); }
+
+  /* ---------- results ---------- */
+  #resultsCard{ display:none; }
+  .exercise-body{ padding:8px 26px 30px; font-size:15px; }
+  .exercise-body h3{
+    font-family:var(--display); font-size:17px; font-weight:600;
+    margin:28px 0 10px; padding-top:18px; border-top:1px solid var(--panel-border);
+    color:var(--text);
+  }
+  .exercise-body h3:first-child{ margin-top:0; padding-top:0; border-top:none; }
+  .exercise-body h4.sub-heading{
+    font-family:var(--display); font-size:13.5px; font-weight:600;
+    color:var(--cyan); margin:16px 0 6px;
+  }
+  .exercise-body strong{ color:var(--cyan); font-weight:600; }
+
+  .exercise-body pre.code-block{
+    background:rgba(0,0,0,0.4);
+    border:1px solid var(--panel-border);
+    border-radius:10px;
+    padding:16px 18px;
+    margin:10px 0 18px;
+    overflow-x:auto;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.65;
+    color:#C9D1E0;
+  }
+  .exercise-body pre.code-block code{ font-family:inherit; white-space:pre; }
+  .exercise-body code.inline-code{
+    font-family:var(--mono);
+    font-size:0.87em;
+    background:rgba(255,255,255,0.09);
+    padding:2px 7px;
+    border-radius:5px;
+    color:var(--cyan);
+  }
+
+  .empty-note{ padding:20px 26px; color:var(--muted); font-size:13.5px; }
+
+  /* ---------- solutions & review ---------- */
+  #solutionsCard{ display:none; }
+  #solutionsCard .card-foot{ align-items:center; }
+
+  .sol-upload{
+    position:relative; overflow:hidden; flex:0 0 auto;
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--mono); font-size:12.5px; color:var(--muted);
+    border:1px dashed var(--panel-border-hover); border-radius:100px;
+    padding:10px 18px; cursor:pointer;
+    transition:border-color .2s ease, color .2s ease, background .2s ease;
+  }
+  .sol-upload:hover{ border-color:var(--cyan); color:var(--text); }
+  .sol-upload input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+  #reviewCard{ display:none; }
+  #reviewLogCard{ display:none; }
+
+  .footer-note{
+    text-align:center; color:var(--muted-dim); font-size:12px;
+    font-family:var(--mono); margin-top:48px;
+    opacity:0; animation:riseIn .7s ease forwards; animation-delay:.4s;
+  }
+
+  @media (max-width:600px){
+    .wrap{ padding:56px 16px 110px; }
+    header.top h1{ font-size:36px; }
+    .blob{ filter:blur(60px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-scene">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="grid-overlay"></div>
+</div>
+
+<div class="wrap">
+
+  <button class="reset-btn" id="resetBtn" title="Clear saved links and results">Reset</button>
+
+  <header class="top">
+    <div class="title-row">
+      <h1>CPPkit</h1>
+      <span class="ai-pill">AI</span>
+    </div>
+    <p class="tagline">Turns your C++ lecture videos into hands-on coding exercises, then reviews the solutions you write for them.</p>
+  </header>
+
+  <section class="card" style="animation-delay:.08s">
+    <div class="card-head">
+      <h2>Today's videos</h2>
+      <span class="count"><span id="linkCount">1</span> / 6</span>
+    </div>
+    <div class="rows" id="rows"></div>
+    <div class="card-foot">
+      <button class="add-link" id="addLinkBtn">+ add another link</button>
+      <button class="run-btn" id="runBtn">Generate exercises</button>
+    </div>
+  </section>
+
+  <section class="card" id="logCard">
+    <div class="card-head">
+      <h2>Processing</h2>
+      <span class="count" id="logProgress"></span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="log-rows" id="logRows"></div>
+  </section>
+
+  <section class="card" id="resultsCard">
+    <div class="card-head">
+      <h2>Your exercise ladder</h2>
+    </div>
+    <div class="exercise-body" id="exerciseBody"></div>
+  </section>
+
+  <section class="card" id="solutionsCard">
+    <div class="card-head">
+      <h2>Submit your solutions</h2>
+    </div>
+    <div class="card-foot">
+      <label class="sol-upload sol-upload-all">
+        <span class="sol-upload-label" id="uploadAllLabel">upload .cpp files</span>
+        <input type="file" id="uploadAllInput" accept=".cpp,.cc,.cxx,.h,.hpp,.txt" multiple />
+      </label>
+      <button class="run-btn" id="reviewBtn" disabled>Review solutions</button>
+    </div>
+  </section>
+
+  <section class="card" id="reviewLogCard">
+    <div class="card-head"><h2>Reviewing</h2></div>
+    <div class="log-rows" id="reviewLogRows"></div>
+  </section>
+
+  <section class="card" id="reviewCard">
+    <div class="card-head"><h2>Review &amp; insight</h2></div>
+    <div class="exercise-body" id="reviewBody"></div>
+  </section>
+
+  <div class="footer-note">Concept by - Vedant Bhat</div>
+</div>
+
+<script>
+const PROXY_URL = "https://ckwpllmgvopiucsqqmkn.supabase.co/functions/v1/gemini-proxy";
+const MAX_LINKS = 6;
+const GAP_MS = 4000; // spacing between video calls to stay clear of rate limits
+
+const INSTRUCTOR_PROMPT = `Act as an elite C++ coding instructor and rigorous curriculum engineer. I am going to provide you with a concept-only technical summary of the C++ tutorials I studied today. Your sole mission is to generate a comprehensive, highly effective set of programming exercises to test my practical implementation, logic building, and debugging limits based on those concepts.
+
+Strict Rules for Exercise Generation:
+1. Project-Based Focus ONLY: ABSOLUTELY NO multiple-choice questions (MCQs), historical trivia (e.g., "Who invented C++"), or rote definitions. Every single exercise must be a functional coding task or a "Simon-style" mini-project where I have to build, compile, and run an actual working tool.
+2. Range & Quantity: Dynamically judge the depth of the provided topics to decide the exact number of questions. The set MUST contain a minimum of 5 and a maximum of 12 mini-projects/exercises.
+3. The Progressive Ladder: Arrange the projects in a strict, linear climbing order of difficulty.
+   - Levels 1-2 (Simple): Pure syntax validation, declaration/initialization basics, and dry input-output terminal utilities.
+   - Levels 3-5 (Intermediate): Practical logic combinations, state checks, and manipulating operator precedence to build functional text-based tools (e.g., calculators, data formatters).
+   - Highest Levels (Tough): Advanced algorithmic puzzles, strict edge-case math constraints, or complex variable state engines designed to test deep conceptual limits.
+4. No Code, Explanations, or Hints: Provide ONLY the project prompts and expected terminal output behavior. Under no circumstances are you allowed to output code templates, solutions, hints, or clues hidden in the text. I want to face the logic completely raw until I explicitly ask for a hint or solution later.`;
+
+const REVIEWER_PROMPT = `You are a rigorous senior C++ code reviewer. You are given, for one or more projects, the original assignment (problem statement, constraints, and expected terminal output) and my submitted C++ solution.
+
+For every project, respond using exactly this structure:
+
+### Project <N>: <short title>
+
+**Correctness:** does the code actually satisfy the constraints and match the expected output? Point out any concrete mismatches.
+
+**Edge cases missed:** list edge cases or constraints the code fails to handle. Say "None spotted" if it genuinely holds up.
+
+**Code quality:** notes on style, structure, naming, and idiomatic C++ usage relevant to what was taught.
+
+**One thing to fix first:** the single highest-leverage improvement, described in words only.
+
+Do not rewrite my code, do not output a corrected code block, and do not hand me a full solution — insight and direction only. Keep each review specific to what's actually in the code, not generic praise.`;
+
+const rowsEl = document.getElementById('rows');
+const addLinkBtn = document.getElementById('addLinkBtn');
+const runBtn = document.getElementById('runBtn');
+const linkCountEl = document.getElementById('linkCount');
+const logCard = document.getElementById('logCard');
+const logRows = document.getElementById('logRows');
+const logProgress = document.getElementById('logProgress');
+const progressFill = document.getElementById('progressFill');
+const resultsCard = document.getElementById('resultsCard');
+const exerciseBody = document.getElementById('exerciseBody');
+const solutionsCard = document.getElementById('solutionsCard');
+const uploadAllInput = document.getElementById('uploadAllInput');
+const uploadAllLabel = document.getElementById('uploadAllLabel');
+const reviewBtn = document.getElementById('reviewBtn');
+const reviewLogCard = document.getElementById('reviewLogCard');
+const reviewLogRows = document.getElementById('reviewLogRows');
+const reviewCard = document.getElementById('reviewCard');
+const reviewBody = document.getElementById('reviewBody');
+const resetBtn = document.getElementById('resetBtn');
+
+// ---------- persistence ----------
+
+const STORAGE_KEY = 'cppkit_state_v1';
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    console.error('failed to read saved state', e);
+    return null;
+  }
+}
+
+function saveState(patch){
+  try{
+    const current = loadState() || {};
+    const next = { ...current, ...patch };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  }catch(e){
+    console.error('failed to save state', e);
+  }
+}
+
+function clearState(){
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){ console.error(e); }
+}
+
+function saveCurrentLinks(){
+  const links = [...rowsEl.querySelectorAll('input[type=url]')].map(inp => inp.value.trim());
+  saveState({ links });
+}
+
+let rowIdSeq = 0;
+
+function addRow(url){
+  const n = rowsEl.children.length;
+  if(n >= MAX_LINKS) return;
+  const id = 'r' + (rowIdSeq++);
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.dataset.id = id;
+  row.innerHTML = `
+    <span class="badge">${n+1}</span>
+    <input type="url" placeholder="https://www.youtube.com/watch?v=..." value="${url ? escapeHtml(url) : ''}" />
+    <button class="row-remove" title="remove">✕</button>
+  `;
+  rowsEl.appendChild(row);
+  row.querySelector('.row-remove').addEventListener('click', () => {
+    row.remove();
+    renumber();
+    saveCurrentLinks();
+  });
+  row.querySelector('input[type=url]').addEventListener('input', saveCurrentLinks);
+  renumber();
+}
+
+function renumber(){
+  [...rowsEl.children].forEach((row, i) => {
+    row.querySelector('.badge').textContent = i + 1;
+  });
+  const n = rowsEl.children.length;
+  linkCountEl.textContent = n;
+  addLinkBtn.disabled = n >= MAX_LINKS;
+  [...rowsEl.querySelectorAll('.row-remove')].forEach(btn => {
+    btn.style.visibility = n > 1 ? 'visible' : 'hidden';
+  });
+}
+
+addLinkBtn.addEventListener('click', () => { addRow(); saveCurrentLinks(); });
+
+function isYoutubeUrl(v){
+  return /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|shorts\/)|youtu\.be\/)/i.test(v.trim());
+}
+
+function collectLinks(){
+  const inputs = [...rowsEl.querySelectorAll('input[type=url]')];
+  let valid = [];
+  let hasBad = false;
+  inputs.forEach(inp => {
+    const v = inp.value.trim();
+    inp.classList.remove('invalid');
+    if(!v) return;
+    if(isYoutubeUrl(v)){
+      valid.push(v);
+    } else {
+      inp.classList.add('invalid');
+      hasBad = true;
+    }
+  });
+  return { valid, hasBad };
+}
+
+function delay(ms){ return new Promise(res => setTimeout(res, ms)); }
+
+async function callGeminiSmart(parts, maxTokens, statusCb){
+  if(statusCb) statusCb('thinking…');
+  const res = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parts, maxTokens })
+  });
+  const data = await res.json().catch(() => ({}));
+  if(!res.ok || data.error){
+    throw new Error(data.error || `Proxy error ${res.status}`);
+  }
+  if(!data.text || !data.text.trim()) throw new Error('Empty response from model');
+  return data.text.trim();
+}
+
+function summarizeParts(url){
+  return [
+    { fileData: { fileUri: url, mimeType: 'video/*' } },
+    { text: 'Summarize the technical and conceptual content taught in this video. Focus only on the C++ concepts, syntax, and techniques explained — skip intros, filler, and personal commentary. Keep it dense, factual, plain text, no markdown formatting.' }
+  ];
+}
+
+// shows an inline retry (and optionally skip) action on a log row, resolves
+// with 'retry' or 'skip' once the person clicks
+function showRetryUI(row, { skippable = true } = {}){
+  return new Promise(resolve => {
+    const actions = document.createElement('span');
+    actions.className = 'retry-actions';
+    actions.innerHTML = `<button class="retry-btn">retry</button>` + (skippable ? `<button class="skip-btn">skip</button>` : '');
+    row.appendChild(actions);
+    actions.querySelector('.retry-btn').addEventListener('click', () => {
+      actions.remove();
+      resolve('retry');
+    });
+    if(skippable){
+      actions.querySelector('.skip-btn').addEventListener('click', () => {
+        actions.remove();
+        resolve('skip');
+      });
+    }
+  });
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// plain markdown rendering — headings, paragraphs, code blocks. No custom
+// numbering or styling layered on top; shows the model's output as-is.
+function renderMarkdownSimple(raw){
+  const text = escapeHtml(raw);
+  const lines = text.split('\n');
+  let html = '';
+  let inCode = false;
+  let codeBuffer = [];
+  const flushCode = () => { html += `<pre class="code-block"><code>${codeBuffer.join('\n')}</code></pre>`; codeBuffer = []; };
+  const inlineFormat = (s) => s
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+
+  for(let rawLine of lines){
+    const trimmed = rawLine.trim();
+    if(/^```/.test(trimmed)){
+      if(inCode){ flushCode(); inCode = false; } else { inCode = true; codeBuffer = []; }
+      continue;
+    }
+    if(inCode){ codeBuffer.push(rawLine); continue; }
+    if(!trimmed) continue;
+    if(/^#{1,6}\s+/.test(trimmed)){
+      const clean = trimmed.replace(/^#{1,6}\s+/, '').replace(/^\*+\s*/, '');
+      html += `<h3>${inlineFormat(clean)}</h3>`;
+      continue;
+    }
+    html += `<p>${inlineFormat(trimmed)}</p>`;
+  }
+  if(inCode) flushCode();
+  return html || `<p>${text}</p>`;
+}
+
+
+function buildLogRow(url){
+  const row = document.createElement('div');
+  row.className = 'log-row';
+  row.innerHTML = `
+    <span class="log-status pending"></span>
+    <span class="log-url">${url}</span>
+    <span class="log-state">waiting</span>
+  `;
+  return row;
+}
+
+function setLogState(row, state, label){
+  const dot = row.querySelector('.log-status');
+  const stateEl = row.querySelector('.log-state');
+  dot.className = 'log-status ' + state;
+  stateEl.textContent = label;
+  stateEl.className = 'log-state ' + (state === 'error' ? 'error-text' : state === 'done' ? 'done-text' : '');
+}
+
+runBtn.addEventListener('click', async () => {
+  const { valid, hasBad } = collectLinks();
+  if(hasBad) return;
+  if(valid.length === 0){
+    alert('Add at least one YouTube link.');
+    return;
+  }
+
+  runBtn.disabled = true;
+  runBtn.textContent = 'Compiling…';
+  addLinkBtn.disabled = true;
+  resultsCard.style.display = 'none';
+  exerciseBody.innerHTML = '';
+  logRows.innerHTML = '';
+  progressFill.style.width = '0%';
+  logCard.style.display = 'block';
+  logCard.style.animation = 'none'; logCard.offsetHeight; logCard.style.animation = 'riseIn .5s ease forwards';
+  logCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const rows = valid.map(url => {
+    const row = buildLogRow(url);
+    logRows.appendChild(row);
+    return row;
+  });
+
+  logProgress.textContent = `0 / ${valid.length}`;
+
+  async function processVideoRow(url, row){
+    while(true){
+      try{
+        const summary = await callGeminiSmart(
+          summarizeParts(url),
+          1024,
+          (label) => setLogState(row, 'active', label)
+        );
+        setLogState(row, 'done', 'done');
+        return summary;
+      }catch(err){
+        console.error(err);
+        setLogState(row, 'error', 'failed');
+        const action = await showRetryUI(row);
+        if(action === 'skip') return null;
+        setLogState(row, 'active', 'summarizing…');
+      }
+    }
+  }
+
+  const summaries = [];
+  let doneCount = 0;
+
+  for(let i = 0; i < valid.length; i++){
+    const url = valid[i];
+    const row = rows[i];
+    setLogState(row, 'active', 'summarizing…');
+    const summary = await processVideoRow(url, row);
+    if(summary) summaries.push(summary);
+
+    doneCount++;
+    logProgress.textContent = `${doneCount} / ${valid.length}`;
+    progressFill.style.width = `${(doneCount / (valid.length + 1)) * 100}%`;
+
+    if(i < valid.length - 1){
+      await delay(GAP_MS);
+    }
+  }
+
+  if(summaries.length === 0){
+    progressFill.style.width = '100%';
+    exerciseBody.innerHTML = `<div class="empty-note">None of the videos could be summarized. Check the links and try again.</div>`;
+    resultsCard.style.display = 'block';
+    runBtn.disabled = false;
+    runBtn.textContent = 'Generate exercises';
+    addLinkBtn.disabled = rowsEl.children.length >= MAX_LINKS;
+    return;
+  }
+
+  const genRow = document.createElement('div');
+  genRow.className = 'log-row';
+  genRow.innerHTML = `<span class="log-status active"></span><span class="log-url">Building your exercise ladder</span><span class="log-state">working…</span>`;
+  logRows.appendChild(genRow);
+
+  const combinedPrompt = summaries.join('\n\n') + '\n\n' + INSTRUCTOR_PROMPT;
+
+  while(true){
+    try{
+      const exercises = await callGeminiSmart(
+        [{ text: combinedPrompt }],
+        4096,
+        (label) => setLogState(genRow, 'active', label)
+      );
+      setLogState(genRow, 'done', 'done');
+      progressFill.style.width = '100%';
+
+      exerciseBody.innerHTML = renderMarkdownSimple(exercises);
+      resultsCard.style.display = 'block';
+      resultsCard.style.animation = 'none'; resultsCard.offsetHeight; resultsCard.style.animation = 'riseIn .6s ease forwards';
+      resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      setupSolutionsCard(exercises);
+      saveState({ exercises, review: null });
+      break;
+    }catch(err){
+      console.error(err);
+      setLogState(genRow, 'error', 'failed');
+      await showRetryUI(genRow, { skippable: false });
+      setLogState(genRow, 'active', 'working…');
+    }
+  }
+
+  runBtn.disabled = false;
+  runBtn.textContent = 'Generate exercises';
+  addLinkBtn.disabled = rowsEl.children.length >= MAX_LINKS;
+});
+
+// ---------- solutions upload + review ----------
+
+let currentExercisesRaw = '';
+let uploadedSolutionFiles = []; // [{name, text}]
+
+function setupSolutionsCard(exercisesRaw){
+  currentExercisesRaw = exercisesRaw;
+  uploadedSolutionFiles = [];
+  reviewCard.style.display = 'none';
+  reviewLogCard.style.display = 'none';
+  reviewBtn.disabled = true;
+  uploadAllLabel.textContent = 'upload .cpp files';
+  uploadAllInput.value = '';
+
+  solutionsCard.style.display = 'block';
+  solutionsCard.style.animation = 'none'; solutionsCard.offsetHeight; solutionsCard.style.animation = 'riseIn .6s ease forwards';
+
+  reviewBtn.onclick = runReview;
+}
+
+uploadAllInput.addEventListener('change', async () => {
+  const files = [...uploadAllInput.files];
+  if(files.length === 0) return;
+
+  uploadedSolutionFiles = await Promise.all(files.map(file => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ name: file.name, text: reader.result });
+    reader.readAsText(file);
+  })));
+
+  uploadAllLabel.textContent = files.length === 1
+    ? files[0].name
+    : `${files.length} files selected`;
+  reviewBtn.disabled = uploadedSolutionFiles.length === 0;
+});
+
+async function runReview(){
+  if(uploadedSolutionFiles.length === 0) return;
+
+  reviewBtn.disabled = true;
+  addLinkBtn.disabled = true;
+  reviewCard.style.display = 'none';
+  reviewBody.innerHTML = '';
+  reviewLogRows.innerHTML = '';
+  reviewLogCard.style.display = 'block';
+  reviewLogCard.style.animation = 'none'; reviewLogCard.offsetHeight; reviewLogCard.style.animation = 'riseIn .5s ease forwards';
+  reviewLogCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const label = uploadedSolutionFiles.length === 1
+    ? `Reviewing ${uploadedSolutionFiles[0].name}`
+    : `Reviewing ${uploadedSolutionFiles.length} files`;
+  const genRow = document.createElement('div');
+  genRow.className = 'log-row';
+  genRow.innerHTML = `<span class="log-status active"></span><span class="log-url">${escapeHtml(label)}</span><span class="log-state">working…</span>`;
+  reviewLogRows.appendChild(genRow);
+
+  const filesBlock = uploadedSolutionFiles.map(f =>
+    `File: ${f.name}\n\`\`\`cpp\n${f.text}\n\`\`\``
+  ).join('\n\n');
+
+  const combined =
+    `Original assignments (may cover multiple projects):\n${currentExercisesRaw}\n\n` +
+    `My submitted code files:\n${filesBlock}\n\n` +
+    REVIEWER_PROMPT;
+
+  while(true){
+    try{
+      const review = await callGeminiSmart(
+        [{ text: combined }],
+        8192,
+        (l) => setLogState(genRow, 'active', l)
+      );
+      setLogState(genRow, 'done', 'done');
+      reviewBody.innerHTML = renderMarkdownSimple(review);
+      reviewCard.style.display = 'block';
+      reviewCard.style.animation = 'none'; reviewCard.offsetHeight; reviewCard.style.animation = 'riseIn .6s ease forwards';
+      reviewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      saveState({ review });
+      break;
+    }catch(err){
+      console.error(err);
+      setLogState(genRow, 'error', 'failed');
+      await showRetryUI(genRow, { skippable: false });
+      setLogState(genRow, 'active', 'working…');
+    }
+  }
+
+  reviewBtn.disabled = false;
+  addLinkBtn.disabled = rowsEl.children.length >= MAX_LINKS;
+}
+
+// ---------- restore on load / reset ----------
+
+function restoreState(){
+  const saved = loadState();
+  const links = (saved && saved.links && saved.links.length) ? saved.links : [''];
+
+  links.slice(0, MAX_LINKS).forEach(url => addRow(url));
+
+  if(saved && saved.exercises){
+    currentExercisesRaw = saved.exercises;
+    exerciseBody.innerHTML = renderMarkdownSimple(saved.exercises);
+    resultsCard.style.display = 'block';
+    setupSolutionsCard(saved.exercises);
+  }
+
+  if(saved && saved.review){
+    reviewBody.innerHTML = renderMarkdownSimple(saved.review);
+    reviewCard.style.display = 'block';
+  }
+}
+
+resetBtn.addEventListener('click', () => {
+  if(!confirm('Clear your saved links, exercises, and review? This can\'t be undone.')) return;
+  clearState();
+  location.reload();
+});
+
+restoreState();
+
+</script>
+</body>
+</html>
