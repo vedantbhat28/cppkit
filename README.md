@@ -21,13 +21,6 @@ CPPkit is a single-page tool built for studying C++ off lecture videos:
 - **Model fallback:** the Edge Function tries a primary model first and automatically falls back to a secondary one if the first fails.
 - **Storage:** `localStorage` in the browser, no backend database involved for user data.
 
-## Setup
-
-1. Deploy the `gemini-proxy` Edge Function to a Supabase project.
-2. Set a `GEMINI_API_KEY` secret on that function (Supabase dashboard → Edge Functions → Secrets, or `supabase secrets set GEMINI_API_KEY=your_key --project-ref <project-ref>`).
-3. Update `PROXY_URL` in `cppkit.html` to point at your deployed function's URL.
-4. Open `cppkit.html` in a browser. Nothing else to install.
-
 ## Notes
 
 - The Edge Function currently accepts requests without authentication (`verify_jwt: false`) so a plain local HTML file can call it. This keeps the API key private, but the function's URL itself is callable by anyone who has it — fine for personal use, worth adding a shared-secret check before sharing the tool more widely.
